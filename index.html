@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Colm Counter - Mobile Stats</title>
+<title>Colm Counter - Game Stats</title>
 <style>
 @font-face {
   font-family: "Inter";
@@ -41,7 +41,8 @@ th{background:#0b1220;position:sticky;top:0;}
   <input id="player" placeholder="e.g., Gina">
   <div>
     <button class="btn primary" id="startBtn">Start Game</button>
-    <button class="btn" id="resetBtn">Reset Session</button>
+    <button class="btn" id="resetBtn">Reset Game</button>
+    <button class="btn" id="saveGameBtn">Save Game</button>
   </div>
 
   <div id="throwArea" style="display:none; margin-top:12px;">
@@ -50,7 +51,6 @@ th{background:#0b1220;position:sticky;top:0;}
       <button class="btn good tap" data-outcome="hole">In Hole (3)</button>
       <button class="btn tap" data-outcome="miss">Miss (0)</button>
       <button class="btn bad tap" data-outcome="frontfloor">Front-Floor 💥</button>
-      <button class="btn" id="newEndBtn">+ New End</button>
     </div>
   </div>
 
@@ -68,9 +68,9 @@ th{background:#0b1220;position:sticky;top:0;}
     <div id="floorBagger" class="floor-bagger"></div>
   </div>
 
-  <h3>Game History</h3>
+  <h3>Play History</h3>
   <table id="logTbl">
-    <thead><tr><th>#</th><th>Outcome</th><th>End</th><th>Time</th></tr></thead>
+    <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Front-Floor</th><th>Floor Bagger</th></tr></thead>
     <tbody></tbody>
   </table>
 </div>
@@ -80,7 +80,8 @@ th{background:#0b1220;position:sticky;top:0;}
   const $ = s=>document.querySelector(s);
   const $$ = s=>Array.from(document.querySelectorAll(s));
 
-  const state = {player:'Player', throws:[], end:1, counters:{ff:0,total:0,streakNoFault:0,bestStreak:0}, score:0};
+  const state = {player:'Player', throws:[], counters:{ff:0,total:0,streakNoFault:0,bestStreak:0}, score:0};
+  const games = []; // store all games of the night
   const outcomes = {
     board:{label:'On Board',points:1,fault:false},
     hole:{label:'In Hole',points:3,fault:false},
@@ -104,19 +105,11 @@ th{background:#0b1220;position:sticky;top:0;}
     $('#barFF').style.width = (counts.frontfloor/total*100) + '%';
 
     $('#floorBagger').textContent = counts.frontfloor>=4 ? '🔥 Floor Bagger!' : '';
-
-    const tb = $('#logTbl tbody');
-    tb.innerHTML = '';
-    state.throws.forEach((r,i)=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${outcomes[r.outcome].label}</td><td>${r.end}</td><td>${new Date(r.t).toLocaleTimeString()}</td>`;
-      tb.appendChild(tr);
-    });
   }
 
   function addThrow(key){
     const oc = outcomes[key];
-    state.throws.push({outcome:key,end:state.end,t:Date.now()});
+    state.throws.push({outcome:key,t:Date.now()});
     state.counters.total++;
     state.score += oc.points;
     if(oc.fault){ state.counters.ff++; state.counters.streakNoFault=0; }
@@ -124,10 +117,29 @@ th{background:#0b1220;position:sticky;top:0;}
     refresh();
   }
 
-  function resetSession(){
-    const n = state.player;
-    Object.assign(state,{player:n, throws:[], end:1, counters:{ff:0,total:0,streakNoFault:0,bestStreak:0}, score:0});
+  function resetGame(){
+    Object.assign(state,{throws:[],counters:{ff:0,total:0,streakNoFault:0,bestStreak:0},score:0});
+    $('#throwArea').style.display='none';
     refresh();
+  }
+
+  function saveGame(){
+    if(!state.throws.length){ alert('Log some throws first.'); return; }
+    const ffCount = state.counters.ff;
+    const floorBagger = ffCount>=4 ? '🔥' : '';
+    games.push({player:state.player, score:state.score, ff:ffCount, floorBagger});
+    renderHistory();
+    resetGame();
+  }
+
+  function renderHistory(){
+    const tb = $('#logTbl tbody');
+    tb.innerHTML = '';
+    games.forEach((g,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${g.player}</td><td>${g.score}</td><td>${g.ff}</td><td>${g.floorBagger}</td>`;
+      tb.appendChild(tr);
+    });
   }
 
   function onTap(el, handler){
@@ -135,8 +147,8 @@ th{background:#0b1220;position:sticky;top:0;}
   }
 
   onTap($('#startBtn'), ()=>{ state.player = $('#player').value.trim()||'Player'; $('#throwArea').style.display='block'; refresh(); });
-  onTap($('#newEndBtn'), ()=>{ state.end++; refresh(); });
-  onTap($('#resetBtn'), resetSession);
+  onTap($('#resetBtn'), resetGame);
+  onTap($('#saveGameBtn'), saveGame);
   $$('.tap').forEach(btn=>onTap(btn, ()=>addThrow(btn.getAttribute('data-outcome'))));
 
 })();
