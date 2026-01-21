@@ -3,177 +3,143 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Colm Counter</title>
+<title>Colm Counter - Mobile Stats</title>
 <style>
-  body { font-family: sans-serif; background:#0b1220; color:#e5e7eb; margin:0; padding:16px; }
-  h1,h2{margin:8px 0;}
-  .panel{background:#111827; padding:12px; border-radius:12px; margin-bottom:16px;}
-  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
-  .btn{padding:8px 12px; border-radius:8px; border:none; cursor:pointer;}
-  .good{background:#34d399; color:#0b1220;}
-  .bad{background:#f43f5e; color:#0b1220;}
-  .stat{margin:4px 0;}
-  table{width:100%; border-collapse:collapse; margin-top:8px;}
-  th,td{padding:6px; border-bottom:1px solid #243041; text-align:left;}
-  .floor-bagger-row { background: #5f1a1a; color: #ffe5e5; font-weight: bold; }
-
-  /* Live stats bars */
-  .stats-bars div { margin:6px 0; color:#cbd5e1; display:flex; flex-direction:column; }
-  .bar-container { display:flex; justify-content:space-between; align-items:center; }
-  .bar { height:16px; background:#34d399; width:0%; border-radius:8px; transition: width 0.3s; margin-top:4px; }
-  .bar.bad { background:#f43f5e; }
+@font-face {
+  font-family: "Inter";
+  src: url("./res/Inter-18pt-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+body {
+  margin:0;
+  font-family:"Inter", system-ui, sans-serif;
+  background:#0b1220;
+  color:#e5e7eb;
+}
+header{padding:12px; text-align:center; background:#111827;}
+h1{margin:0; font-size:20px;}
+.main{padding:12px; max-width:480px; margin:auto;}
+.btn{padding:10px 14px; margin:4px; border-radius:10px; cursor:pointer; border:1px solid #293244; background:#1f2937; color:#e5e7eb;}
+.btn.good{background:#15803d;border-color:#166534;}
+.btn.bad{background:#b91c1c;border-color:#991b1b;}
+.btn.primary{background:#0e7490;border-color:#155e75;}
+input{width:100%;padding:10px;border-radius:8px;border:1px solid #243041;background:#0b1220;color:#e5e7eb;margin:6px 0;}
+.stat-bar{height:24px;border-radius:12px;background:#1f2937;margin:6px 0;position:relative;overflow:hidden;}
+.stat-bar-inner{height:100%;border-radius:12px;transition:width 0.3s;}
+.bar-label{position:absolute;left:8px;top:2px;font-size:12px;font-weight:600;color:#e5e7eb;}
+.floor-bagger{color:#f43f5e;font-weight:bold;margin-top:6px;}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px;}
+th,td{padding:8px;border-bottom:1px solid #1f2937;text-align:left;}
+th{background:#0b1220;position:sticky;top:0;}
 </style>
 </head>
 <body>
-
-<h1>🏆 Colm Counter</h1>
-
-<!-- Player Setup -->
-<div class="panel">
-  <h2>Player</h2>
-  <input id="player" placeholder="Enter name" />
-  <div class="controls">
-    <button class="btn" id="startBtn">Start Game</button>
-    <button class="btn" id="endGameBtn">End Game</button>
-  </div>
-</div>
-
-<!-- Log Throws -->
-<div class="panel" id="throwPanel" style="display:none;">
-  <h2>Log Throws</h2>
-  <div class="controls">
-    <button class="btn good" data-outcome="board">On board</button>
-    <button class="btn good" data-outcome="hole">In hole</button>
-    <button class="btn" data-outcome="miss">Miss</button>
-    <button class="btn bad" data-outcome="frontfloor">Front‑floor 💥</button>
+<header><h1>🏆 Colm Counter</h1></header>
+<div class="main">
+  <label>Player Name</label>
+  <input id="player" placeholder="e.g., Gina">
+  <div>
+    <button class="btn primary" id="startBtn">Start Game</button>
+    <button class="btn" id="resetBtn">Reset Session</button>
   </div>
 
-  <!-- Live Stats with Percentages -->
-  <div class="stats-bars">
+  <div id="throwArea" style="display:none; margin-top:12px;">
     <div>
-      <div class="bar-container"><span>Board</span><span id="boardPct">0%</span></div>
-      <div class="bar" id="boardBar"></div>
-    </div>
-    <div>
-      <div class="bar-container"><span>Hole</span><span id="holePct">0%</span></div>
-      <div class="bar" id="holeBar"></div>
-    </div>
-    <div>
-      <div class="bar-container"><span>Front-floor</span><span id="ffPct">0%</span></div>
-      <div class="bar bad" id="ffBar"></div>
+      <button class="btn good tap" data-outcome="board">On Board (1)</button>
+      <button class="btn good tap" data-outcome="hole">In Hole (3)</button>
+      <button class="btn tap" data-outcome="miss">Miss (0)</button>
+      <button class="btn bad tap" data-outcome="frontfloor">Front-Floor 💥</button>
+      <button class="btn" id="newEndBtn">+ New End</button>
     </div>
   </div>
 
-  <div class="stat">Throws: <span id="throwsLogged">0</span></div>
-  <div class="stat">Front-floor faults: <span id="ffCount">0</span></div>
-</div>
+  <div style="margin-top:16px;">
+    <h3>Live Stats</h3>
+    <div>Score: <span id="score">0</span></div>
+    <div>Front-Floor Faults: <span id="ffCount">0</span></div>
+    <div>Fault Rate: <span id="ffRate">0%</span></div>
+    <div>Best No-Fault Streak: <span id="bestStreak">0</span></div>
 
-<!-- Game History -->
-<div class="panel">
-  <h2>Play History</h2>
-  <table id="historyTbl">
-    <thead>
-      <tr><th>#</th><th>Player</th><th>Throws</th><th>FF</th><th>Floor Bagger?</th></tr>
-    </thead>
+    <div class="stat-bar"><div class="stat-bar-inner" id="barBoard" style="width:0%;background:#34d399;"></div><div class="bar-label">On Board</div></div>
+    <div class="stat-bar"><div class="stat-bar-inner" id="barHole" style="width:0%;background:#0e7490;"></div><div class="bar-label">In Hole</div></div>
+    <div class="stat-bar"><div class="stat-bar-inner" id="barMiss" style="width:0%;background:#9ca3af;"></div><div class="bar-label">Miss</div></div>
+    <div class="stat-bar"><div class="stat-bar-inner" id="barFF" style="width:0%;background:#f43f5e;"></div><div class="bar-label">Front-Floor</div></div>
+    <div id="floorBagger" class="floor-bagger"></div>
+  </div>
+
+  <h3>Game History</h3>
+  <table id="logTbl">
+    <thead><tr><th>#</th><th>Outcome</th><th>End</th><th>Time</th></tr></thead>
     <tbody></tbody>
   </table>
 </div>
 
 <script>
 (() => {
-  const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
+  const $ = s=>document.querySelector(s);
+  const $$ = s=>Array.from(document.querySelectorAll(s));
 
-  let state = { player:'', throws:[], ff:0 };
-  const history = [];
+  const state = {player:'Player', throws:[], end:1, counters:{ff:0,total:0,streakNoFault:0,bestStreak:0}, score:0};
+  const outcomes = {
+    board:{label:'On Board',points:1,fault:false},
+    hole:{label:'In Hole',points:3,fault:false},
+    miss:{label:'Miss',points:0,fault:false},
+    frontfloor:{label:'Front-Floor',points:0,fault:true}
+  };
 
-  function refreshStats() {
-    $('#throwsLogged').textContent = state.throws.length;
-    $('#ffCount').textContent = state.ff;
-    updateBars();
-  }
-
-  function addThrow(outcome) {
-    state.throws.push(outcome);
-    if(outcome === 'frontfloor') state.ff++;
-    refreshStats();
-  }
-
-  function endGame() {
-    if(!state.player) return alert('Start a game first!');
-    if(!state.throws.length) return alert('No throws logged!');
-
-    const floorBagger = state.throws.filter(t => t==='frontfloor').length >= 4;
-    history.push({
-      player: state.player,
-      throws: state.throws.length,
-      ff: state.ff,
-      floorBagger
-    });
-    renderHistory();
-
-    // Reset state for next game
-    state.throws = [];
-    state.ff = 0;
-    refreshStats();
-  }
-
-  function renderHistory() {
-    const tbody = $('#historyTbl tbody');
-    tbody.innerHTML = '';
-    history.forEach((g,i)=>{
-      const tr = document.createElement('tr');
-      if(g.floorBagger) tr.classList.add('floor-bagger-row'); // highlight row
-      tr.innerHTML = `
-        <td>${i+1}</td>
-        <td>${g.player}</td>
-        <td>${g.throws}</td>
-        <td>${g.ff}</td>
-        <td>${g.floorBagger?'Yes':'No'}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function updateBars() {
+  function refresh() {
+    const counts = {board:0, hole:0, miss:0, frontfloor:0};
+    state.throws.forEach(t => counts[t.outcome]++);
     const total = state.throws.length || 1;
-    const counts = { board:0, hole:0, frontfloor:0 };
-    state.throws.forEach(t=>{ if(counts[t]!==undefined) counts[t]++; });
 
-    const boardPct = Math.round(counts.board/total*100);
-    const holePct = Math.round(counts.hole/total*100);
-    const ffPct = Math.round(counts.frontfloor/total*100);
+    $('#score').textContent = state.score;
+    $('#ffCount').textContent = state.counters.ff;
+    $('#ffRate').textContent = Math.round((state.counters.ff/total)*100) + '%';
+    $('#bestStreak').textContent = state.counters.bestStreak;
 
-    $('#boardBar').style.width = boardPct+'%';
-    $('#holeBar').style.width = holePct+'%';
-    $('#ffBar').style.width = ffPct+'%';
+    $('#barBoard').style.width = (counts.board/total*100) + '%';
+    $('#barHole').style.width = (counts.hole/total*100) + '%';
+    $('#barMiss').style.width = (counts.miss/total*100) + '%';
+    $('#barFF').style.width = (counts.frontfloor/total*100) + '%';
 
-    $('#boardPct').textContent = boardPct+'%';
-    $('#holePct').textContent = holePct+'%';
-    $('#ffPct').textContent = ffPct+'%';
+    $('#floorBagger').textContent = counts.frontfloor>=4 ? '🔥 Floor Bagger!' : '';
+
+    const tb = $('#logTbl tbody');
+    tb.innerHTML = '';
+    state.throws.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${outcomes[r.outcome].label}</td><td>${r.end}</td><td>${new Date(r.t).toLocaleTimeString()}</td>`;
+      tb.appendChild(tr);
+    });
   }
 
-  // Event listeners
-  onTap($('#startBtn'), ()=>{
-    const name = $('#player').value.trim();
-    if(!name) return alert('Enter player name');
-    state.player = name;
-    $('#throwPanel').style.display = 'block';
-    refreshStats();
-  });
+  function addThrow(key){
+    const oc = outcomes[key];
+    state.throws.push({outcome:key,end:state.end,t:Date.now()});
+    state.counters.total++;
+    state.score += oc.points;
+    if(oc.fault){ state.counters.ff++; state.counters.streakNoFault=0; }
+    else { state.counters.streakNoFault++; state.counters.bestStreak=Math.max(state.counters.bestStreak,state.counters.streakNoFault); }
+    refresh();
+  }
 
-  onTap($('#endGameBtn'), endGame);
+  function resetSession(){
+    const n = state.player;
+    Object.assign(state,{player:n, throws:[], end:1, counters:{ff:0,total:0,streakNoFault:0,bestStreak:0}, score:0});
+    refresh();
+  }
 
-  $$('.controls button[data-outcome]').forEach(btn=>{
-    onTap(btn, ()=> addThrow(btn.getAttribute('data-outcome')));
-  });
-
-  function onTap(el, handler) {
+  function onTap(el, handler){
     ['click','touchend'].forEach(evt=>el.addEventListener(evt,e=>{e.preventDefault(); handler(e);},{passive:false}));
   }
 
+  onTap($('#startBtn'), ()=>{ state.player = $('#player').value.trim()||'Player'; $('#throwArea').style.display='block'; refresh(); });
+  onTap($('#newEndBtn'), ()=>{ state.end++; refresh(); });
+  onTap($('#resetBtn'), resetSession);
+  $$('.tap').forEach(btn=>onTap(btn, ()=>addThrow(btn.getAttribute('data-outcome'))));
+
 })();
 </script>
-
 </body>
 </html>
