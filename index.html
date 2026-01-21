@@ -1,60 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Colm Counter</title>
-  <style>
-    body { font-family: sans-serif; background:#0b1220; color:#e5e7eb; margin:0; padding:16px; }
-    h1,h2{margin:8px 0;}
-    .panel{background:#111827; padding:12px; border-radius:12px; margin-bottom:16px;}
-    .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
-    .btn{padding:8px 12px; border-radius:8px; border:none; cursor:pointer;}
-    .good{background:#34d399; color:#0b1220;}
-    .bad{background:#f43f5e; color:#0b1220;}
-    .stat{margin:4px 0;}
-    table{width:100%; border-collapse:collapse; margin-top:8px;}
-    th,td{padding:6px; border-bottom:1px solid #243041; text-align:left;}
-    .floor-bagger-row { background: #5f1a1a; color: #ffe5e5; font-weight: bold; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colm Counter</title>
+<style>
+  body { font-family: sans-serif; background:#0b1220; color:#e5e7eb; margin:0; padding:16px; }
+  h1,h2{margin:8px 0;}
+  .panel{background:#111827; padding:12px; border-radius:12px; margin-bottom:16px;}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+  .btn{padding:8px 12px; border-radius:8px; border:none; cursor:pointer;}
+  .good{background:#34d399; color:#0b1220;}
+  .bad{background:#f43f5e; color:#0b1220;}
+  .stat{margin:4px 0;}
+  table{width:100%; border-collapse:collapse; margin-top:8px;}
+  th,td{padding:6px; border-bottom:1px solid #243041; text-align:left;}
+  .floor-bagger-row { background: #5f1a1a; color: #ffe5e5; font-weight: bold; }
+
+  /* Live stats bars */
+  .stats-bars div { margin:6px 0; color:#cbd5e1; }
+  .bar { height:16px; background:#34d399; width:0%; border-radius:8px; transition: width 0.3s; }
+  .bar.bad { background:#f43f5e; }
+</style>
 </head>
 <body>
 
-  <h1>🏆 Colm Counter</h1>
+<h1>🏆 Colm Counter</h1>
 
-  <!-- Player Setup -->
-  <div class="panel">
-    <h2>Player</h2>
-    <input id="player" placeholder="Enter name" />
-    <div class="controls">
-      <button class="btn" id="startBtn">Start Game</button>
-      <button class="btn" id="endGameBtn">End Game</button>
-    </div>
+<!-- Player Setup -->
+<div class="panel">
+  <h2>Player</h2>
+  <input id="player" placeholder="Enter name" />
+  <div class="controls">
+    <button class="btn" id="startBtn">Start Game</button>
+    <button class="btn" id="endGameBtn">End Game</button>
+  </div>
+</div>
+
+<!-- Log Throws -->
+<div class="panel" id="throwPanel" style="display:none;">
+  <h2>Log Throws</h2>
+  <div class="controls">
+    <button class="btn good" data-outcome="board">On board</button>
+    <button class="btn good" data-outcome="hole">In hole</button>
+    <button class="btn" data-outcome="miss">Miss</button>
+    <button class="btn bad" data-outcome="frontfloor">Front‑floor 💥</button>
   </div>
 
-  <!-- Log Throws -->
-  <div class="panel" id="throwPanel" style="display:none;">
-    <h2>Log Throws</h2>
-    <div class="controls">
-      <button class="btn good" data-outcome="board">On board</button>
-      <button class="btn good" data-outcome="hole">In hole</button>
-      <button class="btn" data-outcome="miss">Miss</button>
-      <button class="btn bad" data-outcome="frontfloor">Front‑floor 💥</button>
-    </div>
-    <div class="stat">Throws: <span id="throwsLogged">0</span></div>
-    <div class="stat">Front-floor faults: <span id="ffCount">0</span></div>
+  <!-- Live Stats -->
+  <div class="stats-bars">
+    <div>Board <div class="bar" id="boardBar"></div></div>
+    <div>Hole <div class="bar" id="holeBar"></div></div>
+    <div>Front-floor <div class="bar bad" id="ffBar"></div></div>
   </div>
 
-  <!-- Game History -->
-  <div class="panel">
-    <h2>Play History</h2>
-    <table id="historyTbl">
-      <thead>
-        <tr><th>#</th><th>Player</th><th>Throws</th><th>FF</th><th>Floor Bagger?</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <div class="stat">Throws: <span id="throwsLogged">0</span></div>
+  <div class="stat">Front-floor faults: <span id="ffCount">0</span></div>
+</div>
+
+<!-- Game History -->
+<div class="panel">
+  <h2>Play History</h2>
+  <table id="historyTbl">
+    <thead>
+      <tr><th>#</th><th>Player</th><th>Throws</th><th>FF</th><th>Floor Bagger?</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
 <script>
 (() => {
@@ -67,6 +80,7 @@
   function refreshStats() {
     $('#throwsLogged').textContent = state.throws.length;
     $('#ffCount').textContent = state.ff;
+    updateBars();
   }
 
   function addThrow(outcome) {
@@ -109,6 +123,15 @@
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  function updateBars() {
+    const total = state.throws.length || 1;
+    const counts = { board:0, hole:0, frontfloor:0 };
+    state.throws.forEach(t=>{ if(counts[t]!==undefined) counts[t]++; });
+    $('#boardBar').style.width = (counts.board/total*100)+'%';
+    $('#holeBar').style.width = (counts.hole/total*100)+'%';
+    $('#ffBar').style.width = (counts.frontfloor/total*100)+'%';
   }
 
   // Event listeners
