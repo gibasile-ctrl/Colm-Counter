@@ -18,8 +18,9 @@
   .floor-bagger-row { background: #5f1a1a; color: #ffe5e5; font-weight: bold; }
 
   /* Live stats bars */
-  .stats-bars div { margin:6px 0; color:#cbd5e1; }
-  .bar { height:16px; background:#34d399; width:0%; border-radius:8px; transition: width 0.3s; }
+  .stats-bars div { margin:6px 0; color:#cbd5e1; display:flex; flex-direction:column; }
+  .bar-container { display:flex; justify-content:space-between; align-items:center; }
+  .bar { height:16px; background:#34d399; width:0%; border-radius:8px; transition: width 0.3s; margin-top:4px; }
   .bar.bad { background:#f43f5e; }
 </style>
 </head>
@@ -47,11 +48,20 @@
     <button class="btn bad" data-outcome="frontfloor">Front‑floor 💥</button>
   </div>
 
-  <!-- Live Stats -->
+  <!-- Live Stats with Percentages -->
   <div class="stats-bars">
-    <div>Board <div class="bar" id="boardBar"></div></div>
-    <div>Hole <div class="bar" id="holeBar"></div></div>
-    <div>Front-floor <div class="bar bad" id="ffBar"></div></div>
+    <div>
+      <div class="bar-container"><span>Board</span><span id="boardPct">0%</span></div>
+      <div class="bar" id="boardBar"></div>
+    </div>
+    <div>
+      <div class="bar-container"><span>Hole</span><span id="holePct">0%</span></div>
+      <div class="bar" id="holeBar"></div>
+    </div>
+    <div>
+      <div class="bar-container"><span>Front-floor</span><span id="ffPct">0%</span></div>
+      <div class="bar bad" id="ffBar"></div>
+    </div>
   </div>
 
   <div class="stat">Throws: <span id="throwsLogged">0</span></div>
@@ -129,9 +139,18 @@
     const total = state.throws.length || 1;
     const counts = { board:0, hole:0, frontfloor:0 };
     state.throws.forEach(t=>{ if(counts[t]!==undefined) counts[t]++; });
-    $('#boardBar').style.width = (counts.board/total*100)+'%';
-    $('#holeBar').style.width = (counts.hole/total*100)+'%';
-    $('#ffBar').style.width = (counts.frontfloor/total*100)+'%';
+
+    const boardPct = Math.round(counts.board/total*100);
+    const holePct = Math.round(counts.hole/total*100);
+    const ffPct = Math.round(counts.frontfloor/total*100);
+
+    $('#boardBar').style.width = boardPct+'%';
+    $('#holeBar').style.width = holePct+'%';
+    $('#ffBar').style.width = ffPct+'%';
+
+    $('#boardPct').textContent = boardPct+'%';
+    $('#holePct').textContent = holePct+'%';
+    $('#ffPct').textContent = ffPct+'%';
   }
 
   // Event listeners
