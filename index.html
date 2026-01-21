@@ -1,380 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex, nofollow" />
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="manifest" href="manifest.webmanifest">
-  <title>Colm Counter (PWA, upset bag icon)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Colm Counter</title>
   <style>
-@font-face {
-  font-family: "Inter";
-  src: url("./res/Inter-18pt-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-}
-
-body {
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-}
-    :root{ --bg:#0f172a; --panel:#111827; --ink:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --bad:#f43f5e; --good:#34d399; }
-    html,body{height:100%}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#0b1220;color:var(--ink)}
-    header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #1f2937;background:#0b1020;position:sticky;top:0;z-index:10}
-    header h1{font-size:18px;margin:0}
-    .btn{background:#1f2937;color:var(--ink);border:1px solid #293244;padding:10px 12px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color: transparent}
-    .btn.primary{background:#0e7490;border-color:#155e75}
-    .btn.good{background:#15803d;border-color:#166534}
-    .btn.bad{background:#b91c1c;border-color:#991b1b}
-    .btn.ghost{background:transparent;border-color:#334155;color:#93c5fd}
-    main{max-width:980px;margin:16px auto;padding:0 12px}
-    .panel{background:#0f172a;border:1px solid #1f2937;border-radius:14px;padding:12px}
-    h2{margin:2px 0 10px;font-size:16px;color:#cbd5e1}
-    label{display:block;margin:6px 0;color:var(--muted);font-size:14px}
-    input{background:#0b1220;border:1px solid #243041;color:var(--ink);border-radius:8px;padding:10px 12px;width:100%}
-    table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
-    th,td{padding:10px;border-bottom:1px solid #1f2937;text-align:left}
-    th{color:#cbd5e1;font-weight:600;background:#0b1220;position:sticky;top:0;z-index:1}
-    .chip{display:inline-flex;gap:6px;align-items:center;background:#0b1220;border:1px solid #1f2937;border-radius:999px;padding:6px 10px;font-size:12px;color:#cbd5e1}
-    .stat{display:grid;gap:6px;background:#0b1220;border:1px solid #1f2937;border-radius:12px;padding:12px}
-    .stat .big{font-size:24px;font-weight:700}
-    .danger{color:#fca5a5}
-    .success{color:#86efac}
-    .muted{color:var(--muted)}
-    .roast{white-space:pre-wrap;background:#0b1220;border:1px dashed #334155;border-radius:12px;padding:12px;margin-top:8px}
-    .controls{display:flex;gap:8px;flex-wrap:wrap}
-    .grid{display:grid;gap:16px}
-    @media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
-    .diag{background:#0b3a1e;border:1px solid #14532d;color:#d1fae5;border-radius:10px;padding:8px 10px;margin:10px 0}
-    .install{background:#111827;border:1px dashed #334155;border-radius:12px;padding:10px;margin:10px 0;display:none}
+    body { font-family: sans-serif; background:#0b1220; color:#e5e7eb; margin:0; padding:16px; }
+    h1,h2{margin:8px 0;}
+    .panel{background:#111827; padding:12px; border-radius:12px; margin-bottom:16px;}
+    .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+    .btn{padding:8px 12px; border-radius:8px; border:none; cursor:pointer;}
+    .good{background:#34d399; color:#0b1220;}
+    .bad{background:#f43f5e; color:#0b1220;}
+    .stat{margin:4px 0;}
+    table{width:100%; border-collapse:collapse; margin-top:8px;}
+    th,td{padding:6px; border-bottom:1px solid #243041; text-align:left;}
+    .floor-bagger-row { background: #5f1a1a; color: #ffe5e5; font-weight: bold; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🏆 Colm Counter</h1>
+
+  <h1>🏆 Colm Counter</h1>
+
+  <!-- Player Setup -->
+  <div class="panel">
+    <h2>Player</h2>
+    <input id="player" placeholder="Enter name" />
     <div class="controls">
-      <button class="btn" id="exportCsvBtn">Export Session CSV</button>
-      <button class="btn" id="resetBtn">Reset Session</button>
+      <button class="btn" id="startBtn">Start Game</button>
+      <button class="btn" id="endGameBtn">End Game</button>
     </div>
-  </header>
+  </div>
 
-  <main>
-    <section class="panel">
-      <h2>1) Player</h2>
-      <label>Name</label>
-      <input id="player" placeholder="e.g., Gina" />
-      <div class="controls" style="margin-top:10px">
-        <button class="btn primary" id="startBtn">Start</button>
-        <button class="btn ghost" id="saveToLbBtn">+ Save to Leaderboard</button>
-        <span class="chip">Ends: <span id="endsPlayed">0</span></span>
-        <span class="chip">Throws: <span id="throwsLogged">0</span></span>
-      </div>
-      <div class="diag" id="diagBox" style="display:none"></div>
-      <div class="install" id="installBox">
-        <b>Install?</b> Tap <i>Share</i> → <b>Add to Home Screen</b> to install this app.
-      </div>
-    </section>
+  <!-- Log Throws -->
+  <div class="panel" id="throwPanel" style="display:none;">
+    <h2>Log Throws</h2>
+    <div class="controls">
+      <button class="btn good" data-outcome="board">On board</button>
+      <button class="btn good" data-outcome="hole">In hole</button>
+      <button class="btn" data-outcome="miss">Miss</button>
+      <button class="btn bad" data-outcome="frontfloor">Front‑floor 💥</button>
+    </div>
+    <div class="stat">Throws: <span id="throwsLogged">0</span></div>
+    <div class="stat">Front-floor faults: <span id="ffCount">0</span></div>
+  </div>
 
-    <section class="panel">
-      <h2>2) Log Throws</h2>
-      <div id="throwArea" style="display:none">
-        <label class="muted">Tap an outcome for each bag.</label>
-        <div class="controls" style="margin-top:8px">
-          <button class="btn good tap" data-outcome="board">On board (1)</button>
-          <button class="btn good tap" data-outcome="hole">In hole (3)</button>
-          <button class="btn tap" data-outcome="miss">Miss (0)</button>
-          <button class="btn bad tap" data-outcome="frontfloor">Front‑floor 💥</button>
-          <button class="btn" id="newEndBtn">+ New End</button>
-        </div>
-      </div>
-    </section>
+  <!-- Game History -->
+  <div class="panel">
+    <h2>Play History</h2>
+    <table id="historyTbl">
+      <thead>
+        <tr><th>#</th><th>Player</th><th>Throws</th><th>FF</th><th>Floor Bagger?</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-    <section class="panel grid">
-      <div>
-        <h2>3) Live Stats</h2>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-          <div class="stat"><div class="muted">Front‑floor faults</div><div class="big danger" id="ffCount">0</div></div>
-          <div class="stat"><div class="muted">Fault rate</div><div class="big danger" id="ffRate">0%</div></div>
-          <div class="stat"><div class="muted">Best no‑fault streak</div><div class="big success" id="bestStreak">0</div></div>
-        </div>
-        <div class="stat" style="margin-top:12px"><div class="muted">Score</div><div class="big" id="score">0</div></div>
-
-        <table id="logTbl">
-          <thead>
-            <tr><th>#</th><th>Outcome</th><th>End</th><th>Timestamp</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div>
-        <h2>Roast Report 🔥</h2>
-        <div class="controls"><button class="btn" id="roastBtn">Generate Roast</button></div>
-        <div class="roast" id="roastBox">No roast yet.</div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>4) Mini Leaderboard</h2>
-      <div class="controls" style="margin-bottom:8px">
-        <label class="muted">Sort by</label>
-        <select id="lbSort">
-          <option value="rate_desc">Highest fault rate (most roastable)</option>
-          <option value="rate_asc">Lowest fault rate (most accurate)</option>
-          <option value="ff_desc">Most front‑floor faults</option>
-          <option value="throws_desc">Most throws</option>
-          <option value="sessions_desc">Most sessions</option>
-          <option value="last_desc">Most recent</option>
-        </select>
-        <button class="btn" id="exportLbCsvBtn">Export Leaderboard CSV</button>
-        <button class="btn" id="clearLbBtn">Clear Leaderboard</button>
-      </div>
-      <table id="lbTbl">
-        <thead>
-          <tr>
-            <th>#</th><th>Player</th><th>Sessions</th><th>Throws</th><th>FF</th><th>Fault %</th><th>Best Streak</th><th>Last Played</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </main>
-
-  <script>
+<script>
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
 
-  const state = {
-    player:'Player',
-    throws:[],
-    end:1,
-    counters:{ff:0,total:0,streakNoFault:0,bestStreak:0},
-    score:0
-  };
-  const LB_KEY = 'cornhole_roast_leaderboard_v1';
-  const outcomes = {
-    board:{label:'On board',points:1,fault:false},
-    hole:{label:'In hole',points:3,fault:false},
-    miss:{label:'Miss',points:0,fault:false},
-    frontfloor:{label:'Front-floor',points:0,fault:true}
-  };
+  let state = { player:'', throws:[], ff:0 };
+  const history = [];
 
-  function persist(){ try{ localStorage.setItem('cornhole_roast_solo', JSON.stringify(state)); }catch(e){} }
-  function load(){ try{ const s = JSON.parse(localStorage.getItem('cornhole_roast_solo')); if(s) Object.assign(state, s); }catch(e){} }
-  function loadLB(){ try{ return JSON.parse(localStorage.getItem(LB_KEY))||[]; }catch(e){ return []; } }
-  function saveLB(arr){ try{ localStorage.setItem(LB_KEY, JSON.stringify(arr)); }catch(e){} }
-
-  function fmtTime(ts){ const d = new Date(ts); return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
-  function fmtDate(ts){ const d = new Date(ts); return d.toLocaleDateString([], {month:'short', day:'numeric'}); }
-
-  function refresh(){
-    $('#score').textContent = state.score;
-    $('#ffCount').textContent = state.counters.ff;
-    const rate = state.counters.total ? Math.round((state.counters.ff/state.counters.total)*100) : 0;
-    $('#ffRate').textContent = rate + '%';
-    $('#bestStreak').textContent = state.counters.bestStreak;
-
-    const tb = $('#logTbl tbody');
-    tb.innerHTML = '';
-    state.throws.forEach((r,i)=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${outcomes[r.outcome].label}${outcomes[r.outcome].fault?' 💥':''}</td><td>${r.end}</td><td>${fmtTime(r.t)}</td>`;
-      tb.appendChild(tr);
-    });
-
-    $('#endsPlayed').textContent = Math.max(1, state.end - 1 + (state.throws.length?1:0));
+  function refreshStats() {
     $('#throwsLogged').textContent = state.throws.length;
-
-    try{ localStorage.setItem('cornhole_roast_solo', JSON.stringify(state)); }catch(e){}
+    $('#ffCount').textContent = state.ff;
   }
 
-  function addThrow(key){
-    const oc = outcomes[key];
-    state.throws.push({outcome:key,end:state.end,t:Date.now()});
-    state.counters.total++;
-    state.score += oc.points;
-    if(oc.fault){
-      state.counters.ff++;
-      state.counters.streakNoFault=0;
-    } else {
-      state.counters.streakNoFault++;
-      state.counters.bestStreak=Math.max(state.counters.bestStreak,state.counters.streakNoFault);
-    }
-    refresh();
+  function addThrow(outcome) {
+    state.throws.push(outcome);
+    if(outcome === 'frontfloor') state.ff++;
+    refreshStats();
   }
 
-  function resetSession(){
-    const n = state.player;
-    Object.assign(state,{
-      player:n,
-      throws:[],
-      end:1,
-      counters:{ff:0,total:0,streakNoFault:0,bestStreak:0},
-      score:0
+  function endGame() {
+    if(!state.player) return alert('Start a game first!');
+    if(!state.throws.length) return alert('No throws logged!');
+
+    const floorBagger = state.throws.filter(t => t==='frontfloor').length >= 4;
+    history.push({
+      player: state.player,
+      throws: state.throws.length,
+      ff: state.ff,
+      floorBagger
     });
-    refresh();
+    renderHistory();
+
+    // Reset state for next game
+    state.throws = [];
+    state.ff = 0;
+    refreshStats();
   }
 
-  function saveSessionToLB(){
-    if(!state.throws.length){ alert('Log some throws first.'); return; }
-    const lb = loadLB();
-    const rate = state.counters.total ? Math.round(state.counters.ff/state.counters.total*100) : 0;
-    lb.push({
-      player: state.player || 'Player',
-      ff: state.counters.ff,
-      total: state.counters.total,
-      rate,
-      bestStreak: state.counters.bestStreak,
-      score: state.score,
-      ts: Date.now()
-    });
-    saveLB(lb);
-    renderLB();
-    alert('Saved to leaderboard!');
-  }
-
-  function aggregateLB(s){
-    const m = new Map();
-    s.forEach(x=>{
-      const k = (x.player || 'Player').trim();
-      if(!m.has(k)) m.set(k,{player:k,sessions:0,throws:0,ff:0,bestStreak:0,last:0});
-      const a = m.get(k);
-      a.sessions++;
-      a.throws += (x.total || 0);
-      a.ff += (x.ff || 0);
-      a.bestStreak = Math.max(a.bestStreak, x.bestStreak || 0);
-      a.last = Math.max(a.last, x.ts || 0);
-    });
-    const rows = [...m.values()].map(r=>({...r, rate:r.throws?Math.round(r.ff/r.throws*100):0}));
-    return {rows};
-  }
-
-  function renderLB(){
-    const sort = $('#lbSort').value;
-    const ag = aggregateLB(loadLB());
-    const rows = ag.rows.sort((a,b)=>{
-      switch(sort){
-        case 'rate_desc': return (b.rate-a.rate)||(b.ff-a.ff);
-        case 'rate_asc': return (a.rate-b.rate)||(a.ff-b.ff);
-        case 'ff_desc': return (b.ff-a.ff)||(b.throws-a.throws);
-        case 'throws_desc': return (b.throws-a.throws);
-        case 'sessions_desc': return (b.sessions-a.sessions)||(b.last-a.last);
-        case 'last_desc': return (b.last-a.last);
-      }
-    });
-    const tb = $('#lbTbl tbody');
-    tb.innerHTML = '';
-    rows.forEach((r,i)=>{
+  function renderHistory() {
+    const tbody = $('#historyTbl tbody');
+    tbody.innerHTML = '';
+    history.forEach((g,i)=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${r.player}</td><td>${r.sessions}</td><td>${r.throws}</td><td>${r.ff}</td><td>${r.rate}%</td><td>${r.bestStreak}</td><td>${r.last?fmtDate(r.last):'-'}</td>`;
-      tb.appendChild(tr);
+      if(g.floorBagger) tr.classList.add('floor-bagger-row'); // highlight row
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>${g.player}</td>
+        <td>${g.throws}</td>
+        <td>${g.ff}</td>
+        <td>${g.floorBagger?'Yes':'No'}</td>
+      `;
+      tbody.appendChild(tr);
     });
   }
 
-  function exportCsv(name, rows){
-    const all = rows.map(r=>r.join(',')).join('\n');
-    const blob = new Blob([all], {type:'text/csv'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    a.click();
-  }
-
-  function exportSessionCsv(){
-    const header = ['#','player','outcome','is_front_floor','end','timestamp'];
-    const rows = state.throws.map((r,i)=>[
-      i+1,
-      state.player,
-      outcomes[r.outcome].label,
-      outcomes[r.outcome].fault?1:0,
-      r.end,
-      new Date(r.t).toISOString()
-    ]);
-    exportCsv(`cornhole_roast_session_${new Date().toISOString().slice(0,10)}.csv`, [header, ...rows]);
-  }
-
-  function exportLbCsv(){
-    const ag = aggregateLB(loadLB());
-    const header = ['rank','player','sessions','throws','ff','fault_rate_pct','best_streak','last_played_iso'];
-    const rows = ag.rows.map((r,i)=>[
-      i+1,
-      r.player,
-      r.sessions,
-      r.throws,
-      r.ff,
-      r.rate,
-      new Date(r.last || Date.now()).toISOString()
-    ]);
-    exportCsv(`cornhole_roast_leaderboard_${new Date().toISOString().slice(0,10)}.csv`, [header, ...rows]);
-  }
-
-  function onTap(el, handler){
-    ['click','touchend'].forEach(evt =>
-      el.addEventListener(evt, e=>{
-        e.preventDefault();
-        handler(e);
-      }, {passive:false})
-    );
-  }
-
-  onTap($('#startBtn'), ()=>{ 
-    state.player = ($('#player').value.trim()||'Player'); 
-    $('#throwArea').style.display='block'; 
-    refresh(); 
+  // Event listeners
+  onTap($('#startBtn'), ()=>{
+    const name = $('#player').value.trim();
+    if(!name) return alert('Enter player name');
+    state.player = name;
+    $('#throwPanel').style.display = 'block';
+    refreshStats();
   });
-  onTap($('#newEndBtn'), ()=>{ state.end++; refresh(); });
-  onTap($('#resetBtn'), ()=>{ if(confirm('Reset current session?')) resetSession(); });
-  onTap($('#exportCsvBtn'), exportSessionCsv);
-  onTap($('#roastBtn'), ()=>{
-    if(!state.throws.length){ $('#roastBox').textContent='Log some throws first.'; return; }
-    const r = state.counters.total ? Math.round(state.counters.ff/state.counters.total*100) : 0;
-    const lines = [
-      `Solo wrap for ${state.player}: score ${state.score}.`,
-      `Front-floor count: ${state.counters.ff} (${r}%). Best no-fault streak: ${state.counters.bestStreak}.`
-    ];
-    if(state.counters.ff>0){
-      const quips = [
-        `${state.player} treated the front of the board like a VIP lounge.`,
-        `${state.player} brought a mop for all those floor landings.`,
-        `Breaking news: ${state.player}'s bags prefer ground-level parking.`,
-        `${state.player}'s pre-shot routine: aim, yeet, floor.`,
-        `${state.player} unlocked the secret mode: "Board? Never heard of her."`
-      ];
-      lines.push('🔥 Roast: '+quips[(state.counters.ff+state.throws.length)%quips.length]);
-    } else {
-      lines.push('🔥 Roast: No roast today — the floor stayed lonely.');
-    }
-    $('#roastBox').textContent = lines.join('\n');
-  });
-  onTap($('#saveToLbBtn'), saveSessionToLB);
-  $('#lbSort').addEventListener('change', renderLB);
-  onTap($('#clearLbBtn'), ()=>{
-    if(confirm('Clear the leaderboard on this device?')){
-      localStorage.setItem(LB_KEY,'[]'); 
-      renderLB(); 
-    }
-  });
-  onTap($('#exportLbCsvBtn'), exportLbCsv);
-  $$('.tap').forEach(btn=> onTap(btn, e=> addThrow(btn.getAttribute('data-outcome'))));
 
-  try{ load(); }catch(e){}
-  refresh();
-  renderLB();
+  onTap($('#endGameBtn'), endGame);
 
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('./service-worker.js',{scope:'./'}).catch(()=>{});
-    });
+  $$('.controls button[data-outcome]').forEach(btn=>{
+    onTap(btn, ()=> addThrow(btn.getAttribute('data-outcome')));
+  });
+
+  function onTap(el, handler) {
+    ['click','touchend'].forEach(evt=>el.addEventListener(evt,e=>{e.preventDefault(); handler(e);},{passive:false}));
   }
 
-  const ua = window.navigator.userAgent.toLowerCase();
-  if(/iphone|ipad|ipod/.test(ua) && !window.navigator.standalone){
-    document.getElementById('installBox').style.display='block';
-  }
 })();
 </script>
 
