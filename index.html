@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Colm Counter - Game Stats</title>
+<title>Colm Counter - Live Game Stats</title>
 <style>
 @font-face {
   font-family: "Inter";
@@ -43,6 +43,7 @@ th{background:#0b1220;position:sticky;top:0;}
     <button class="btn primary" id="startBtn">Start Game</button>
     <button class="btn" id="resetBtn">Reset Game</button>
     <button class="btn" id="saveGameBtn">Save Game</button>
+    <button class="btn bad" id="clearHistoryBtn">Clear Play History</button>
   </div>
 
   <div id="throwArea" style="display:none; margin-top:12px;">
@@ -75,149 +76,119 @@ th{background:#0b1220;position:sticky;top:0;}
   </table>
 </div>
 
+<!-- Firebase SDK -->
 <script type="module">
-  // Firebase imports
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBPr5o01_7eu_6CwnIGnU-8Xk0VkvrhCpQ",
-    authDomain: "colm-counter.firebaseapp.com",
-    databaseURL: "https://colm-counter-default-rtdb.firebaseio.com",
-    projectId: "colm-counter",
-    storageBucket: "colm-counter.firebasestorage.app",
-    messagingSenderId: "816396612687",
-    appId: "1:816396612687:web:722d998566acb90276e63a",
-    measurementId: "G-8K696QXP4G"
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyBPr5o01_7eu_6CwnIGnU-8Xk0VkvrhCpQ",
+  authDomain: "colm-counter.firebaseapp.com",
+  databaseURL: "https://colm-counter-default-rtdb.firebaseio.com",
+  projectId: "colm-counter",
+  storageBucket: "colm-counter.firebasestorage.app",
+  messagingSenderId: "816396612687",
+  appId: "1:816396612687:web:722d998566acb90276e63a",
+  measurementId: "G-8K696QXP4G"
+};
+
+// Init Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+</script>
+
+<script>
+(() => {
+  const $ = s=>document.querySelector(s);
+  const $$ = s=>Array.from(document.querySelectorAll(s));
+
+  const state = {player:'Player', throws:[], counters:{ff:0,total:0,streakNoFault:0,bestStreak:0}, score:0};
+  const games = []; // local game history
+  const outcomes = {
+    board:{label:'On Board',points:1,fault:false},
+    hole:{label:'In Hole',points:3,fault:false},
+    miss:{label:'Miss',points:0,fault:false},
+    frontfloor:{label:'Front-Floor',points:0,fault:true}
   };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+  function refresh() {
+    const counts = {board:0, hole:0, miss:0, frontfloor:0};
+    state.throws.forEach(t => counts[t.outcome]++);
+    const total = state.throws.length || 1;
 
-  (() => {
-    const $ = s=>document.querySelector(s);
-    const $$ = s=>Array.from(document.querySelectorAll(s));
+    $('#score').textContent = state.score;
+    $('#ffCount').textContent = state.counters.ff;
+    $('#ffRate').textContent = Math.round((state.counters.ff/total)*100) + '%';
+    $('#bestStreak').textContent = state.counters.bestStreak;
 
-    const state = {player:'Player', throws:[], counters:{ff:0,total:0,streakNoFault:0,bestStreak:0}, score:0};
-    const games = []; // store all games of the night
-    const outcomes = {
-      board:{label:'On Board',points:1,fault:false},
-      hole:{label:'In Hole',points:3,fault:false},
-      miss:{label:'Miss',points:0,fault:false},
-      frontfloor:{label:'Front-Floor',points:0,fault:true}
-    };
+    $('#barBoard').style.width = (counts.board/total*100) + '%';
+    $('#barHole').style.width = (counts.hole/total*100) + '%';
+    $('#barMiss').style.width = (counts.miss/total*100) + '%';
+    $('#barFF').style.width = (counts.frontfloor/total*100) + '%';
 
-    function refresh() {
-      const counts = {board:0, hole:0, miss:0, frontfloor:0};
-      state.throws.forEach(t => counts[t.outcome]++);
-      const total = state.throws.length || 1;
+    $('#floorBagger').textContent = counts.frontfloor>=4 ? '🔥 Floor Bagger!' : '';
+  }
 
-      $('#score').textContent = state.score;
-      $('#ffCount').textContent = state.counters.ff;
-      $('#ffRate').textContent = Math.round((state.counters.ff/total)*100) + '%';
-      $('#bestStreak').textContent = state.counters.bestStreak;
+  function addThrow(key){
+    const oc = outcomes[key];
+    state.throws.push({outcome:key,t:Date.now()});
+    state.counters.total++;
+    state.score += oc.points;
+    if(oc.fault){ state.counters.ff++; state.counters.streakNoFault=0; }
+    else { state.counters.streakNoFault++; state.counters.bestStreak=Math.max(state.counters.bestStreak,state.counters.streakNoFault); }
+    refresh();
 
-      $('#barBoard').style.width = (counts.board/total*100) + '%';
-      $('#barHole').style.width = (counts.hole/total*100) + '%';
-      $('#barMiss').style.width = (counts.miss/total*100) + '%';
-      $('#barFF').style.width = (counts.frontfloor/total*100) + '%';
-
-      $('#floorBagger').textContent = counts.frontfloor>=4 ? '🔥 Floor Bagger!' : '';
+    // Write live to Firebase
+    if(state.player.trim()){
+      const playerRef = ref(db,'current/'+state.player);
+      set(playerRef,state.throws.map(t=>({outcome:t.outcome,t:Date.now(),score:state.score,ff:state.counters.ff})));
     }
+  }
 
-    function addThrow(key){
-      const oc = outcomes[key];
-      state.throws.push({outcome:key,t:Date.now()});
-      state.counters.total++;
-      state.score += oc.points;
-      if(oc.fault){ state.counters.ff++; state.counters.streakNoFault=0; }
-      else { state.counters.streakNoFault++; state.counters.bestStreak=Math.max(state.counters.bestStreak,state.counters.streakNoFault); }
-      refresh();
-      // Push current throw for live tracking
-      push(ref(db,'current/'+state.player), {outcome:key, t:Date.now(), score:state.score, ff:state.counters.ff});
-    }
+  function resetGame(){
+    Object.assign(state,{throws:[],counters:{ff:0,total:0,streakNoFault:0,bestStreak:0},score:0});
+    $('#throwArea').style.display='none';
+    refresh();
+  }
 
-    function resetGame(){
-      Object.assign(state,{throws:[],counters:{ff:0,total:0,streakNoFault:0,bestStreak:0},score:0});
-      $('#throwArea').style.display='none';
-      refresh();
-    }
+  function saveGame(){
+    if(!state.throws.length){ alert('Log some throws first.'); return; }
+    const ffCount = state.counters.ff;
+    const floorBagger = ffCount>=4 ? '🔥' : '';
+    games.push({player:state.player, score:state.score, ff:ffCount, floorBagger});
+    renderHistory();
+    resetGame();
+  }
 
-    function saveGame(){
-      if(!state.throws.length){ alert('Log some throws first.'); return; }
-      const ffCount = state.counters.ff;
-      const floorBagger = ffCount>=4 ? '🔥' : '';
-      const gameRecord = {player:state.player, score:state.score, ff:ffCount, floorBagger, ts:Date.now()};
-      push(ref(db,'games'), gameRecord);
+  function renderHistory(){
+    const tb = $('#logTbl tbody');
+    tb.innerHTML = '';
+    games.forEach((g,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${g.player}</td><td>${g.score}</td><td>${g.ff}</td><td>${g.floorBagger}</td>`;
+      tb.appendChild(tr);
+    });
+  }
 
-      games.push(gameRecord);
-      renderHistory();
-      resetGame();
-    }
-
-    function renderHistory(){
-      const tb = $('#logTbl tbody');
-      tb.innerHTML = '';
-      games.forEach((g,i)=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i+1}</td><td>${g.player}</td><td>${g.score}</td><td>${g.ff}</td><td>${g.floorBagger}</td>`;
-        tb.appendChild(tr);
-      });
-    }
-
-    function onTap(el, handler){
-      ['click','touchend'].forEach(evt=>el.addEventListener(evt,e=>{e.preventDefault(); handler(e);},{passive:false}));
-    }
-
-    onTap($('#startBtn'), ()=>{ state.player = $('#player').value.trim()||'Player'; $('#throwArea').style.display='block'; refresh(); });
-    onTap($('#resetBtn'), resetGame);
-    onTap($('#saveGameBtn'), saveGame);
-    $$('.tap').forEach(btn=>onTap(btn, ()=>addThrow(btn.getAttribute('data-outcome'))));
-
-    // --- FIREBASE LISTENER: LIVE UPDATES ---
-    const gamesRef = ref(db,'games');
-    onValue(gamesRef, snapshot=>{
-      const data = snapshot.val() || {};
-      const allGames = Object.values(data);
-
+  function clearHistory(){
+    if(confirm('Clear play history?')){
       games.length = 0;
-      allGames.forEach(g=>{
-        const floorBagger = g.ff>=4 ? '🔥' : '';
-        games.push({player:g.player, score:g.score||0, ff:g.ff||0, floorBagger});
-      });
       renderHistory();
-    });
+    }
+  }
 
-    const currentRef = ref(db,'current');
-    onValue(currentRef, snapshot=>{
-      const currentData = snapshot.val() || {};
-      const counts = {board:0,hole:0,miss:0,frontfloor:0};
-      let tempScore=0, tempFF=0, tempStreak=0;
+  function onTap(el, handler){
+    ['click','touchend'].forEach(evt=>el.addEventListener(evt,e=>{e.preventDefault(); handler(e);},{passive:false}));
+  }
 
-      Object.values(currentData).forEach(userThrows=>{
-        userThrows.forEach(t=>{
-          const o = t.outcome;
-          counts[o] = (counts[o]||0)+1;
-          tempScore = t.score; tempFF = t.ff;
-        });
-      });
+  onTap($('#startBtn'), ()=>{ state.player = $('#player').value.trim()||'Player'; $('#throwArea').style.display='block'; refresh(); });
+  onTap($('#resetBtn'), resetGame);
+  onTap($('#saveGameBtn'), saveGame);
+  onTap($('#clearHistoryBtn'), clearHistory);
+  $$('.tap').forEach(btn=>onTap(btn, ()=>addThrow(btn.getAttribute('data-outcome'))));
 
-      const total = Object.values(counts).reduce((a,b)=>a+b,0) || 1;
-      $('#score').textContent = tempScore;
-      $('#ffCount').textContent = tempFF;
-      $('#ffRate').textContent = Math.round((counts.frontfloor/total)*100)+'%';
-      $('#bestStreak').textContent = tempStreak;
-
-      $('#barBoard').style.width = (counts.board/total*100) + '%';
-      $('#barHole').style.width = (counts.hole/total*100) + '%';
-      $('#barMiss').style.width = (counts.miss/total*100) + '%';
-      $('#barFF').style.width = (counts.frontfloor/total*100) + '%';
-
-      $('#floorBagger').textContent = counts.frontfloor>=4?'🔥 Floor Bagger!':'';
-    });
-
-  })();
+})();
 </script>
 </body>
 </html>
