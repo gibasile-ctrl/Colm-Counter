@@ -1,48 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colm Counter - Live Stats</title>
-  <style>
-    body { font-family: system-ui, sans-serif; background:#0b1220; color:#e5e7eb; margin:0; padding:0; }
-    header { padding:12px; background:#111827; display:flex; justify-content:space-between; align-items:center; }
-    header h1 { margin:0; font-size:18px; }
-    .btn { padding:10px 12px; border-radius:10px; border:none; cursor:pointer; margin:4px; }
-    .btn.primary { background:#0e7490; color:white; }
-    .btn.good { background:#15803d; color:white; }
-    .btn.bad { background:#b91c1c; color:white; }
-    .panel { margin:12px; padding:12px; background:#111827; border-radius:12px; }
-    .controls { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-    table { width:100%; border-collapse:collapse; margin-top:8px; }
-    th, td { padding:6px; border-bottom:1px solid #1f2937; text-align:left; }
-    th { background:#0b1220; position:sticky; top:0; }
-    .bar-container { background:#243041; border-radius:8px; overflow:hidden; height:20px; margin-top:4px; }
-    .bar { height:100%; background:#22d3ee; width:0%; transition: width 0.3s; }
-    .floor-bagger { color:#f43f5e; font-weight:bold; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colm Counter - Mobile Stats</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#0b1220; color:#e5e7eb; margin:0; padding:0; }
+  header { padding:12px; background:#111827; display:flex; justify-content:space-between; align-items:center; }
+  header h1 { margin:0; font-size:18px; }
+  .btn { padding:10px 12px; border-radius:10px; border:none; cursor:pointer; margin:4px; }
+  .btn.primary { background:#0e7490; color:white; }
+  .btn.good { background:#15803d; color:white; }
+  .btn.bad { background:#b91c1c; color:white; }
+  .panel { margin:12px; padding:12px; background:#111827; border-radius:12px; }
+  .controls { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  input { width:100%; padding:10px; border-radius:8px; border:none; background:#1f2937; color:white; margin-top:6px; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; font-size:14px; }
+  th, td { padding:6px; border-bottom:1px solid #1f2937; text-align:left; }
+  th { background:#0b1220; position:sticky; top:0; }
+  .bar-container { background:#243041; border-radius:8px; overflow:hidden; height:20px; margin-top:4px; }
+  .bar { height:100%; background:#22d3ee; width:0%; transition: width 0.3s; }
+  .floor-bagger { color:#f43f5e; font-weight:bold; }
+  @media(max-width:500px){ header, .panel{margin:6px; padding:8px;} .controls button{flex:1;} }
+</style>
 
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-analytics.js";
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-analytics.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBPr5o01_7eu_6CwnIGnU-8Xk0VkvrhCpQ",
-      authDomain: "colm-counter.firebaseapp.com",
-      databaseURL: "https://colm-counter-default-rtdb.firebaseio.com",
-      projectId: "colm-counter",
-      storageBucket: "colm-counter.firebasestorage.app",
-      messagingSenderId: "816396612687",
-      appId: "1:816396612687:web:722d998566acb90276e63a",
-      measurementId: "G-8K696QXP4G"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyBPr5o01_7eu_6CwnIGnU-8Xk0VkvrhCpQ",
+    authDomain: "colm-counter.firebaseapp.com",
+    databaseURL: "https://colm-counter-default-rtdb.firebaseio.com",
+    projectId: "colm-counter",
+    storageBucket: "colm-counter.firebasestorage.app",
+    messagingSenderId: "816396612687",
+    appId: "1:816396612687:web:722d998566acb90276e63a",
+    measurementId: "G-8K696QXP4G"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getDatabase(app);
-  </script>
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const db = getDatabase(app);
+</script>
 
 </head>
 <body>
@@ -50,7 +52,7 @@
 <header>
   <h1>🏆 Colm Counter</h1>
   <div class="controls">
-    <button class="btn primary" id="resetBtn">Reset Game</button>
+    <button class="btn primary" id="resetBtn">End Game</button>
     <button class="btn" id="exportCsvBtn">Export CSV</button>
   </div>
 </header>
@@ -59,7 +61,7 @@
 
   <div class="panel">
     <h2>Player</h2>
-    <input id="player" placeholder="Enter name" />
+    <input id="player" placeholder="Enter player name" />
     <div class="controls">
       <button class="btn primary" id="startBtn">Start Game</button>
     </div>
@@ -77,9 +79,9 @@
 
   <div class="panel">
     <h2>Live Stats</h2>
-    <div>Front-Floor Faults: <span id="ffCount">0</span></div>
     <div>Score: <span id="score">0</span></div>
-    <div>Floor-Bagger?: <span id="floorBagger" class="floor-bagger">No</span></div>
+    <div>Front-Floor Faults: <span id="ffCount">0</span></div>
+    <div>Floor Bagger?: <span id="floorBagger" class="floor-bagger">No</span></div>
     <div class="bar-container">
       <div class="bar" id="faultBar"></div>
     </div>
@@ -104,12 +106,7 @@
   const $ = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
 
-  const state = {
-    player:'Player',
-    throws:[],
-    score:0,
-    ff:0
-  };
+  const state = { player:'Player', throws:[], score:0, ff:0 };
   const outcomes = {
     board:{points:1,fault:false},
     hole:{points:3,fault:false},
@@ -117,71 +114,56 @@
     frontfloor:{points:0,fault:true}
   };
 
-  function refreshStats() {
+  function refreshStats(){
     $('#score').textContent = state.score;
     $('#ffCount').textContent = state.ff;
+    $('#floorBagger').textContent = state.ff>=4?'YES':'No';
+    $('#faultBar').style.width = state.throws.length ? (state.ff/state.throws.length*100)+'%' : '0%';
 
-    // Floor-Bagger: 4+ front-floor throws
-    $('#floorBagger').textContent = state.ff >= 4 ? 'YES' : 'No';
-
-    // Update bar
-    const rate = state.throws.length ? (state.ff/state.throws.length)*100 : 0;
-    $('#faultBar').style.width = rate + '%';
-
-    // Log table
     const tb = $('#logTbl tbody');
-    tb.innerHTML = '';
+    tb.innerHTML='';
     state.throws.forEach((t,i)=>{
       const lbl = t.fault ? 'Front-Floor 💥' : t.label;
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${lbl}</td><td>${new Date(t.t).toLocaleTimeString()}</td>`;
+      tr.innerHTML=`<td>${i+1}</td><td>${lbl}</td><td>${new Date(t.t).toLocaleTimeString()}</td>`;
       tb.appendChild(tr);
     });
   }
 
   function addThrow(type){
     const t = outcomes[type];
-    state.throws.push({label:type, fault:t.fault, points:t.points, t:Date.now()});
+    state.throws.push({label:type,fault:t.fault,points:t.points,t:Date.now()});
     state.score += t.points;
     if(t.fault) state.ff++;
     refreshStats();
 
-    // Send to Firebase
-    const dbRef = ref(db, 'games');
-    push(dbRef, { player: state.player, outcome:type, points:t.points, fault:t.fault, ts:Date.now() });
+    // Firebase push
+    const dbRef = ref(db,'games');
+    push(dbRef,{player:state.player,outcome:type,points:t.points,fault:t.fault,ts:Date.now()});
   }
 
-  function resetGame(){
+  function endGame(){
     if(state.throws.length){
-      // Add to play history
       const histTb = $('#historyTbl tbody');
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${state.player}</td><td>${state.score}</td><td>${state.ff}</td><td>${state.ff>=4?'YES':'No'}</td>`;
+      tr.innerHTML=`<td>${state.player}</td><td>${state.score}</td><td>${state.ff}</td><td>${state.ff>=4?'YES':'No'}</td>`;
       histTb.appendChild(tr);
     }
-    state.throws=[];
-    state.score=0;
-    state.ff=0;
+    state.throws=[]; state.score=0; state.ff=0;
     refreshStats();
     $('#throwArea').style.display='none';
     $('#player').value='';
   }
 
-  // Button bindings
-  onTap($('#startBtn'), ()=>{ state.player = ($('#player').value || 'Player'); $('#throwArea').style.display='block'; refreshStats(); });
-  onTap($('#resetBtn'), resetGame);
-  $$('.tap').forEach(btn => onTap(btn, e=> addThrow(btn.getAttribute('data-outcome'))));
+  function onTap(el, handler){ ['click','touchend'].forEach(evt=> el.addEventListener(evt,e=>{ e.preventDefault(); handler(e); },{passive:false})); }
 
-  function onTap(el, handler){ ['click','touchend'].forEach(evt=> el.addEventListener(evt, e=>{ e.preventDefault(); handler(e); }, {passive:false})); }
+  onTap($('#startBtn'),()=>{ state.player = $('#player').value.trim() || 'Player'; $('#throwArea').style.display='block'; refreshStats(); });
+  onTap($('#resetBtn'), endGame);
+  $$('.tap').forEach(btn=>onTap(btn,e=>addThrow(btn.getAttribute('data-outcome'))));
 
-  // Firebase: listen to all games live
+  // Firebase live listener (optional for future leaderboard)
   const gamesRef = ref(db,'games');
-  onValue(gamesRef, snapshot=>{
-    const data = snapshot.val();
-    // You could show live feed for all players here if desired
-    console.log('Live Firebase data:', data);
-  });
-
+  onValue(gamesRef,snapshot=>{ const data = snapshot.val(); console.log('Live Firebase:',data); });
 })();
 </script>
 
